@@ -1,0 +1,43 @@
+// Fonts
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap');
+
+// General
+*{box-sizing: border-box}
+html{font-size: 18px}
+html, body, #root
+{
+	margin: 0px;
+	padding: 0px;
+}
+
+body{background-color: #EDEDED}
+
+// Typography
+:root{color: #222222}
+
+h1, h2, h3, h4, h5, h6
+{
+	margin: 0px;
+	padding: 0px;
+    font-weight: 700;
+    font-style: normal;
+    font-family: "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+}
+
+p, a, li, input, textarea, button, label, td, th
+{
+	margin: 0px;
+	padding: 0px;
+	font-style: normal;
+	font-weight: normal;
+    font-family: "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+}
+
+// Buttons
+button
+{
+    border: none;
+    outline: none;
+    cursor: pointer;
+    background: none;
+}
