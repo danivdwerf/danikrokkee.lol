@@ -5,7 +5,7 @@ WORKDIR /app
 ADD . .
 
 # Install the node modules and build the project
-RUN yarn install --prefer-offline --frozen-lockfile --non-interactive --production=true && \
+RUN yarn install --prefer-offline --frozen-lockfile --non-interactive && \
     yarn build
 
 # Production stage
