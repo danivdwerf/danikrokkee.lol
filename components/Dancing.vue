@@ -33,23 +33,9 @@ const mounted = async(): Promise<void>=>
 {
     if (!stage.value)
         return;
-    
-    // Create renderer
-    renderer = new THREE.WebGLRenderer();
-    renderer.setSize(stage.value.clientWidth, stage.value.clientHeight);
-    stage.value.appendChild(renderer.domElement);
 
-    // Create scene
-    scene = new THREE.Scene();
-
-    // Create camera
-    camera = new THREE.PerspectiveCamera(75, stage.value.clientWidth / stage.value.clientHeight, 0.1, 1000);
-    camera.position.set(0, 3, 6);
-
-    // Light
-    const light = new THREE.PointLight()
-    light.position.set(0, 10, 15)
-    scene.add(light);
+    setupScene();
+    createLights();
 
     try{await Promise.all([placeFloor(), createAudio(), placeModel()]);}
     catch(error){return console.error(error)}
@@ -57,19 +43,63 @@ const mounted = async(): Promise<void>=>
     $emit("loaded");
 };
 
+const setupScene = (): void=>
+{
+    if (!stage.value)
+        return;
+    
+    // renderer
+    renderer = new THREE.WebGLRenderer();
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.setSize(stage.value.clientWidth, stage.value.clientHeight);
+    stage.value.appendChild(renderer.domElement);
+
+    // scene
+    scene = new THREE.Scene();
+
+    // camera
+    camera = new THREE.PerspectiveCamera(75, stage.value.clientWidth / stage.value.clientHeight, 0.1, 1000);
+    camera.position.set(0, 3, 6);
+
+    window.addEventListener("resize", ()=>
+    {
+        if (!stage.value)
+            return;
+
+        camera.aspect = stage.value.clientWidth / stage.value.clientHeight;
+        renderer.setSize(stage.value.clientWidth, stage.value.clientHeight);
+    });
+};
+
+const createLights = (): void=>
+{
+    const spotLight = new THREE.SpotLight(0xFFFFFF, 4);
+    spotLight.position.set(0, 40, 30);
+    spotLight.angle = Math.PI / 35;
+    spotLight.penumbra = 0.5;
+    spotLight.decay = 2;
+    spotLight.distance = 100;
+
+    spotLight.castShadow = true;
+    spotLight.shadow.mapSize.width = 1024;
+    spotLight.shadow.mapSize.height = 1024;
+    spotLight.shadow.camera.near = 10;
+    spotLight.shadow.camera.far = 200;
+    spotLight.shadow.focus = 1;
+    scene.add(spotLight);
+};
+
 const placeFloor = async(): Promise<void>=>
 {
-    console.log("place floor");
     const material = new THREE.MeshPhongMaterial({
-        map: textureLoader.load("/models/floor/textures/albedo.png"),
-        aoMap: textureLoader.load("/models/floor/textures/mixed-ao.png"),
-        normalMap: textureLoader.load("/models/floor/textures/normal.png"),
+        map: textureLoader.load("/models/floor/textures/albedo.jpg"),
     });
 
-    const model = await fbxLoader.loadAsync("models/floor/floor.fbx");
+    const floorObj = await fbxLoader.loadAsync("models/floor/floor.fbx");
 
     // Apply material to children
-    model.traverse(child=>
+    floorObj.traverse(child=>
     {
         if (!(child instanceof THREE.Mesh))
             return;
@@ -77,22 +107,14 @@ const placeFloor = async(): Promise<void>=>
         // apply texture
         child.material = material;
         child.material.needsUpdate = true;
+
+        child.castShadow = true;
+        child.receiveShadow = true;
     });
 
-    const floor1 = model.clone(true);
-    floor1.position.set(-2, 0, -6);
-    floor1.scale.set(0.1, 0.1, 0.1);
-    scene.add(floor1);
-
-    const floor2 = model.clone(true);
-    floor2.position.set(-11, 0, -6);
-    floor2.scale.set(0.1, 0.1, 0.1);
-    scene.add(floor2);
-
-    const floor3 = model.clone(true);
-    floor3.position.set(7, 0, -6);
-    floor3.scale.set(0.1, 0.1, 0.1);
-    scene.add(floor3);
+    floorObj.position.set(-2, 0, -6);
+    floorObj.scale.set(0.1, 0.1, 0.1);
+    scene.add(floorObj);
 };
 
 const createAudio = async(): Promise<void>=>
@@ -116,6 +138,15 @@ const placeModel = async(): Promise<void>=>
 {
     model = await fbxLoader.loadAsync("models/model.fbx", onFBXProgress);
     model.scale.set(0.03, 0.03, 0.03);
+
+    // Apply material to children
+    model.traverse(child=>
+    {
+        if (!(child instanceof THREE.Mesh))
+            return;
+
+        child.castShadow = true;
+    });
 
     mixer = new THREE.AnimationMixer(model)
     animation = mixer.clipAction(model.animations[0])
