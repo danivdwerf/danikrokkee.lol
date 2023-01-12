@@ -15,8 +15,6 @@ const $emit = defineEmits<{
     (e: "loaded"): void
 }>();
 
-const stage: Ref<HTMLDivElement | undefined> = ref();
-
 let model: THREE.Group;
 let sound: THREE.Audio;
 let scene: THREE.Scene;
@@ -24,9 +22,14 @@ let camera: THREE.Camera;
 let mixer: THREE.AnimationMixer;
 let renderer: THREE.WebGLRenderer;
 let animation: THREE.AnimationAction;
-const clock: THREE.Clock = new THREE.Clock();
 
-onMounted(()=>
+const clock: THREE.Clock = new THREE.Clock();
+const fbxLoader: FBXLoader = new FBXLoader();
+const textureLoader = new THREE.TextureLoader();
+
+const stage: Ref<HTMLDivElement | undefined> = ref();
+
+const mounted = async(): Promise<void>=>
 {
     if (!stage.value)
         return;
@@ -45,61 +48,90 @@ onMounted(()=>
 
     // Light
     const light = new THREE.PointLight()
-    light.position.set(2.5, 7.5, 15)
+    light.position.set(0, 10, 15)
     scene.add(light);
 
-    createAudio();
-    loadFBX();
+    try{await Promise.all([placeFloor(), createAudio(), placeModel()]);}
+    catch(error){return console.error(error)}
 
-    tick();
-});
+    $emit("loaded");
+};
 
-const createAudio = (): void=>
+const placeFloor = async(): Promise<void>=>
+{
+    console.log("place floor");
+    const material = new THREE.MeshPhongMaterial({
+        map: textureLoader.load("/models/floor/textures/albedo.png"),
+        aoMap: textureLoader.load("/models/floor/textures/mixed-ao.png"),
+        normalMap: textureLoader.load("/models/floor/textures/normal.png"),
+    });
+
+    const model = await fbxLoader.loadAsync("models/floor/floor.fbx");
+
+    // Apply material to children
+    model.traverse(child=>
+    {
+        if (!(child instanceof THREE.Mesh))
+            return;
+
+        // apply texture
+        child.material = material;
+        child.material.needsUpdate = true;
+    });
+
+    const floor1 = model.clone(true);
+    floor1.position.set(-2, 0, -6);
+    floor1.scale.set(0.1, 0.1, 0.1);
+    scene.add(floor1);
+
+    const floor2 = model.clone(true);
+    floor2.position.set(-11, 0, -6);
+    floor2.scale.set(0.1, 0.1, 0.1);
+    scene.add(floor2);
+
+    const floor3 = model.clone(true);
+    floor3.position.set(7, 0, -6);
+    floor3.scale.set(0.1, 0.1, 0.1);
+    scene.add(floor3);
+};
+
+const createAudio = async(): Promise<void>=>
 {
     // create an AudioListener and add it to the camera
     const listener = new THREE.AudioListener();
     camera?.add(listener);
 
+    // load a sound
+    const audioLoader = new THREE.AudioLoader();
+    const buffer = await audioLoader.loadAsync("audio/song.mp3");
+
     // create a global audio source
     sound = new THREE.Audio(listener);
     sound.setLoop(true);
     sound.autoplay = false;
-
-    // load a sound and set it as the Audio object's buffer
-    const audioLoader = new THREE.AudioLoader();
-    audioLoader.load("audio/song.mp3", onAudioLoaded);
+    sound.setBuffer(buffer);
 }
 
-const onAudioLoaded = (buffer: AudioBuffer)=>
+const placeModel = async(): Promise<void>=>
 {
-    sound?.setBuffer(buffer);
-}
+    model = await fbxLoader.loadAsync("models/model.fbx", onFBXProgress);
+    model.scale.set(0.03, 0.03, 0.03);
 
-const loadFBX = (): void=>
-{
-    const fbxLoader: FBXLoader = new FBXLoader();
-    fbxLoader.load("models/model.fbx", onFBXLoaded, onFBXProgress);
-}
+    mixer = new THREE.AnimationMixer(model)
+    animation = mixer.clipAction(model.animations[0])
+
+    scene?.add(model);
+};
+
 
 const onFBXProgress = (event: ProgressEvent<EventTarget>): void=>
-{
     $emit("progress", event.loaded / event.total * 100);
-}
-
-const onFBXLoaded = (object: THREE.Group): void=>
-{
-    object.scale.set(0.03, 0.03, 0.03);
-    model = object;
-    mixer = new THREE.AnimationMixer(object)
-    animation = mixer.clipAction(object.animations[0])
-    scene?.add(object);
-    $emit("loaded");
-}
 
 const play = (): void=>
 {
     animation?.play();
     sound?.play();
+    tick();
 }
 
 const tick = (): void=>
@@ -114,6 +146,7 @@ const tick = (): void=>
     model?.rotateY(0.01);
 }
 
+onMounted(mounted);
 defineExpose({play});
 </script>
 
