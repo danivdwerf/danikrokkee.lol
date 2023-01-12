@@ -1,0 +1,6 @@
+.git*
+.nuxt
+.vscode
+node_modules
+.DS_Store
+README.md

@@ -1,0 +1,19 @@
+image: atlassian/default-image:3
+
+pipelines:
+  branches:
+    master:
+      - step:
+          name: Production
+          deployment: Production
+          script:
+            # Build the image
+            - docker build -t $REGISTRY/$IMAGE:$TAG .
+
+             # Login to registry
+            - docker login $REGISTRY --username $DOCKER_USR --password $DOCKER_PWD
+
+            # Push the image to the registry
+            - docker push $REGISTRY/$IMAGE:$TAG
+          services:
+            - docker
