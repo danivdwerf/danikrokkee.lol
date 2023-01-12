@@ -6,7 +6,7 @@
 import {ref, onMounted, defineEmits, defineExpose} from "vue";
 
 import * as THREE from "three";
-import {FBXLoader} from "three/examples/jsm/loaders/FBXLoader";
+import {FBXLoader} from "three/examples/jsm/loaders/FBXLoader.js";
 
 import type {Ref} from "vue";
 
@@ -18,9 +18,9 @@ const $emit = defineEmits<{
 let model: THREE.Group;
 let sound: THREE.Audio;
 let scene: THREE.Scene;
-let camera: THREE.Camera;
 let mixer: THREE.AnimationMixer;
 let renderer: THREE.WebGLRenderer;
+let camera: THREE.PerspectiveCamera;
 let animation: THREE.AnimationAction;
 
 const clock: THREE.Clock = new THREE.Clock();
@@ -68,6 +68,7 @@ const setupScene = (): void=>
             return;
 
         camera.aspect = stage.value.clientWidth / stage.value.clientHeight;
+        camera.updateProjectionMatrix();
         renderer.setSize(stage.value.clientWidth, stage.value.clientHeight);
     });
 };
