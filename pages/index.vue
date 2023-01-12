@@ -5,9 +5,13 @@
         </div>
 
         <div v-if="!isPlaying" id="loader">
-            <h1 v-if="loading">A special message is being loaded...</h1>
-            <h1 v-else>Press start to view your special message</h1>
-            <button v-if="!loading" @click="play"><p>Start</p></button>
+            <h1 v-if="loading">Dani Krokkee is being loaded...</h1>
+            <h1 v-else>Your experience is ready to be started</h1>
+
+            <loader v-if="loading" id="spinner" />
+            <button v-else @click="play">
+                <p>Start</p>
+            </button>
         </div>
 
         <dancing ref="dancing" @loaded="loading = false" @progress="onProgress" />
@@ -57,12 +61,18 @@ const onProgress = (value: number): void=>
     z-index: 2;
     right: 0px;
     bottom: 0px;
+    padding: 0.8rem;
     display: flex;
     position: fixed;
     align-items: center;
     flex-direction: column;
     justify-content: center;
     background-color: #EDEDED;
+
+    h1
+    {
+        text-align: center;
+    }
 
     button
     {
@@ -71,20 +81,17 @@ const onProgress = (value: number): void=>
         padding: 0.6rem 1.5rem;
         background-color: #3549BA;
 
-        p{font-weight: 900; font-size: 1.5rem}
+        p
+        {
+            font-weight: 900;
+            font-size: 1.5rem;
+            color: #FFFFFF;
+        }
     }
 }
 
-svg {
-  transform: rotate(-90deg);
-  stroke-dasharray: 251; /* (2PI * 40px) */
-  stroke-dashoffset: 251;
-  animation: offsettozero 5s linear forwards;
-}
-
-@keyframes offsettozero {
-  to {
-    stroke-dashoffset: 0;
-  }
+#spinner
+{
+    width: 35vh
 }
 </style>
